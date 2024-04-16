@@ -11,11 +11,7 @@
         "@solidjs/start": "^1.0.0-rc.0",
         "@wagmi/connectors": "^4.1.26",
         "@wagmi/core": "^2.6.17",
-        "abitype": "^1.0.2",
-        "autoprefixer": "^10.4.14",
-        "postcss": "^8.4.26",
         "solid-js": "^1.8.16",
-        "tailwindcss": "^3.3.3",
         "viem": "~2.9.19",
         "vinxi": "^0.3.10"
     },
@@ -23,8 +19,12 @@
         "node": ">=18"
     },
     "devDependencies": {
+        "abitype": "^1.0.2",
+        "autoprefixer": "^10.4.19",
         "globals": "^15.0.0",
+        "postcss": "^8.4.38",
         "prettier": "^3.2.5",
-        "prettier-plugin-tailwindcss": "^0.5.13"
+        "prettier-plugin-tailwindcss": "^0.5.13",
+        "tailwindcss": "^3.4.3"
     }
 }

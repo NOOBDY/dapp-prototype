@@ -1,21 +1,32 @@
-import {
-    GetAccountReturnType,
-    connect,
-    disconnect,
-    getAccount,
-    getBalance,
-    reconnect,
-    watchAccount
-} from "@wagmi/core";
+import { connect, disconnect, getBalance, reconnect } from "@wagmi/core";
 import { injected } from "@wagmi/connectors";
-import { config } from "~/lib/config";
-import { Match, Show, Switch, createResource, createSignal, onMount } from "solid-js";
-import { Address } from "abitype";
+import { Match, Switch, createEffect, createMemo, createResource, onMount } from "solid-js";
 import { formatEther } from "viem";
+import { useAccount } from "~/lib/useAccount";
+import { useConfig } from "~/lib/useConfig";
 
 export default function Home() {
-    const [address, setAddress] = createSignal<Address>();
-    const [status, setStatus] = createSignal<GetAccountReturnType["status"]>("reconnecting");
+    const config = useConfig();
+    const account = useAccount();
+
+    const address = createMemo(() => {
+        const a = account();
+        if (a) {
+            return a.address;
+        }
+    });
+
+    const status = createMemo(() => {
+        const a = account();
+        if (a) {
+            return a.status;
+        }
+    });
+
+    createEffect(() => {
+        account();
+        refetch();
+    });
 
     const [balanceString, { refetch }] = createResource(async () => {
         const a = address();
@@ -23,14 +34,6 @@ export default function Home() {
         if (a) {
             const { value, symbol } = await getBalance(config, { address: a });
             return formatEther(value) + " " + symbol;
-        }
-    });
-
-    watchAccount(config, {
-        onChange(account) {
-            setAddress(account.address);
-            setStatus(account.status);
-            refetch();
         }
     });
 
@@ -44,8 +47,6 @@ export default function Home() {
 
     const handleDisconnect = async () => {
         await disconnect(config);
-
-        setAddress(undefined);
     };
 
     return (
