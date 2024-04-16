@@ -5,7 +5,7 @@ import { lazy } from "solid-js";
 
 import "./index.css";
 
-const Home = lazy(() => import("./routes/Home"));
+import Home from "./routes/Home";
 
 const root = document.getElementById("root");
 
