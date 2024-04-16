@@ -1,25 +1,103 @@
-import { A } from "@solidjs/router";
-import Counter from "~/components/Counter";
+import {
+    GetAccountReturnType,
+    connect,
+    disconnect,
+    getAccount,
+    getBalance,
+    reconnect,
+    watchAccount
+} from "@wagmi/core";
+import { injected } from "@wagmi/connectors";
+import { config } from "~/lib/config";
+import { Match, Show, Switch, createResource, createSignal, onMount } from "solid-js";
+import { Address } from "abitype";
+import { formatEther } from "viem";
 
 export default function Home() {
+    const [address, setAddress] = createSignal<Address>();
+    const [status, setStatus] = createSignal<GetAccountReturnType["status"]>("reconnecting");
+
+    const [balanceString, { refetch }] = createResource(async () => {
+        const a = address();
+
+        if (a) {
+            const { value, symbol } = await getBalance(config, { address: a });
+            return formatEther(value) + " " + symbol;
+        }
+    });
+
+    watchAccount(config, {
+        onChange(account) {
+            setAddress(account.address);
+            setStatus(account.status);
+            refetch();
+        }
+    });
+
+    onMount(async () => {
+        await reconnect(config, { connectors: [injected()] });
+    });
+
+    const handleConnect = async () => {
+        await connect(config, { connector: injected() });
+    };
+
+    const handleDisconnect = async () => {
+        await disconnect(config);
+
+        setAddress(undefined);
+    };
+
     return (
-        <main class="mx-auto p-4 text-center text-gray-700">
-            <h1 class="max-6-xs my-16 text-6xl font-thin uppercase text-sky-700">Hello world!</h1>
-            <Counter />
-            <p class="mt-8">
-                Visit{" "}
-                <a href="https://solidjs.com" target="_blank" class="text-sky-600 hover:underline">
-                    solidjs.com
-                </a>{" "}
-                to learn how to build Solid apps.
-            </p>
-            <p class="my-4">
-                <span>Home</span>
-                {" - "}
-                <A href="/about" class="text-sky-600 hover:underline">
-                    About Page
-                </A>{" "}
-            </p>
+        <main class="py-20">
+            <div class="mx-auto flex h-[40rem] w-[60rem] flex-col rounded-lg bg-slate-800 p-10 text-slate-100">
+                <Switch>
+                    <Match when={status() === "reconnecting"}>
+                        <div class="flex grow justify-center p-20">
+                            <h1 class="text-6xl text-slate-500">Reconnecting</h1>
+                        </div>
+                    </Match>
+
+                    <Match when={status() === "disconnected"}>
+                        <div class="flex grow justify-center p-20">
+                            <h1 class="text-6xl text-slate-500">Connect to Metamask</h1>
+                        </div>
+
+                        <div class="flex w-full justify-center">
+                            <button
+                                onClick={handleConnect}
+                                class="rounded bg-slate-600 px-4 py-2 text-slate-200
+                                    transition-all hover:bg-slate-700 hover:text-slate-300"
+                            >
+                                Connect
+                            </button>
+                        </div>
+                    </Match>
+
+                    <Match when={status() === "connected"}>
+                        <div class="grow">
+                            <p class="text-lg">
+                                Address:{" "}
+                                <code class="rounded-sm bg-gray-600 px-1 text-slate-300">
+                                    {address()?.toString()}
+                                </code>
+                            </p>
+
+                            <p class="mb-10 text-lg">{balanceString()}</p>
+                        </div>
+
+                        <div class="flex w-full justify-center">
+                            <button
+                                onClick={handleDisconnect}
+                                class="rounded bg-slate-600 px-4 py-2 text-slate-200
+                            transition-all hover:bg-slate-700 hover:text-slate-300"
+                            >
+                                Disconnect
+                            </button>
+                        </div>
+                    </Match>
+                </Switch>
+            </div>
         </main>
     );
 }
